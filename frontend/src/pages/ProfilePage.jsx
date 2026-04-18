@@ -3,7 +3,8 @@ import { useAuth0 } from '@auth0/auth0-react'
 import { fetchMe } from '../services/api'
 
 export default function ProfilePage() {
-  const { isAuthenticated, getAccessTokenSilently } = useAuth0()
+  const { isAuthenticated, getAccessTokenSilently, user: auth0User } = useAuth0()
+
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -18,6 +19,7 @@ export default function ProfilePage() {
         if (!isAuthenticated) {
           if (isMounted) {
             setError('You need to log in')
+            setLoading(false)
           }
           return
         }
@@ -58,6 +60,18 @@ export default function ProfilePage() {
     }
   }, [isAuthenticated, getAccessTokenSilently])
 
+  // 🔥 Fallback inteligente (backend vs Auth0)
+  const finalUser = {
+    name:
+      user?.name && !user.name.includes('|')
+        ? user.name
+        : auth0User?.name,
+    email: user?.email || auth0User?.email,
+    picture: user?.picture ?? auth0User?.picture,
+  }
+
+  const avatar = finalUser.picture
+
   if (loading) {
     return (
       <div>
@@ -76,21 +90,22 @@ export default function ProfilePage() {
     )
   }
 
-  const avatar = user?.avatar ?? user?.avatarUrl ?? user?.picture
-
   return (
     <div>
       <h1>Profile</h1>
+
       {avatar && (
         <img
           src={avatar}
-          alt={user?.name ? `${user.name} avatar` : 'Profile avatar'}
+          alt={finalUser.name ? `${finalUser.name} avatar` : 'Profile avatar'}
           width="96"
           height="96"
+          style={{ borderRadius: '50%' }}
         />
       )}
-      <p>Name: {user?.name ?? 'N/A'}</p>
-      <p>Email: {user?.email ?? 'N/A'}</p>
+
+      <p>Name: {finalUser.name ?? 'N/A'}</p>
+      <p>Email: {finalUser.email ?? 'N/A'}</p>
     </div>
   )
 }
