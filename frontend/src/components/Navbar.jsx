@@ -15,6 +15,12 @@ export default function Navbar() {
         </span>
 
         <div className="navbar-actions">
+          <a href="/" className="btn btn-outline">
+            Feed
+          </a>
+          <a href="/profile" className="btn btn-outline">
+            Profile
+          </a>
           {isAuthenticated ? (
             <>
               <span className="navbar-user">

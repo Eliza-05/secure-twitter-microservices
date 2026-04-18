@@ -1,21 +1,59 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import PostForm from '../components/PostForm'
 import PostCard from '../components/PostCard'
 import { fetchStream, createPost } from '../services/api'
 import './FeedPage.css'
 
-const MOCK_POSTS = [
-  { id: 1, content: 'Welcome to Secure Twitter! 🎉', authorId: 'demo', authorName: 'Demo User', createdAt: new Date().toISOString() },
-  { id: 2, content: 'This feed will show real posts once the backend is connected.', authorId: 'demo', authorName: 'Demo User', createdAt: new Date(Date.now() - 60000).toISOString() },
-]
-
 export default function FeedPage() {
   const { getAccessTokenSilently, isAuthenticated } = useAuth0()
-  const [posts, setPosts] = useState(MOCK_POSTS)
+  const [posts, setPosts] = useState([])
   const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let isMounted = true
+
+    const loadPosts = async () => {
+      try {
+        setError(null)
+        setLoading(true)
+
+        const streamPosts = await fetchStream()
+
+        if (isMounted) {
+          setPosts(streamPosts)
+        }
+      } catch (err) {
+        if (!isMounted) return
+
+        const status = err?.status ?? err?.response?.status
+
+        if (status === 401 || status === 403) {
+          setError('You need to log in')
+        } else {
+          setError('Error loading posts')
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    loadPosts()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   const handlePostCreated = async (content) => {
+    if (!isAuthenticated) {
+      setError('You need to log in')
+      return
+    }
+
     try {
       setError(null)
       const token = await getAccessTokenSilently()
@@ -29,13 +67,21 @@ export default function FeedPage() {
   return (
     <div className="feed-page">
       <h1 className="feed-title">Home</h1>
+
       <PostForm onPostCreated={handlePostCreated} />
+
       {error && <p className="feed-error">{error}</p>}
+
       <div className="feed-list">
-        {posts.length === 0
-          ? <p className="feed-empty">No posts yet. Be the first!</p>
-          : posts.map((post) => <PostCard key={post.id} post={post} />)
-        }
+        {loading ? (
+          <p>Loading...</p>
+        ) : posts.length === 0 ? (
+          <p className="feed-empty">No posts yet. Be the first!</p>
+        ) : (
+          posts.map((post) => (
+            <PostCard key={post.id} post={post} />
+          ))
+        )}
       </div>
     </div>
   )
