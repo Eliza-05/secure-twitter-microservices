@@ -1,0 +1,28 @@
+# AWS SAM CLI deployment configuration
+# Run:  sam build && sam deploy --guided  (first time)
+# Then: sam build && sam deploy           (subsequent deploys)
+
+version = 0.1
+
+[default.global.parameters]
+stack_name = "secure-twitter-microservices"
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.deploy.parameters]
+stack_name        = "secure-twitter-microservices"
+region            = "us-east-1"
+capabilities      = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3        = true
+
+# Fill these in before deploying — do NOT commit real values
+parameter_overrides = [
+  "DbUrl=jdbc:postgresql://YOUR-RDS-ENDPOINT:5432/securetwitter",
+  "DbUsername=postgres",
+  "DbPassword=YOUR-DB-PASSWORD",
+  "Auth0IssuerUri=https://YOUR-TENANT.us.auth0.com/",
+  "Auth0Audience=https://secure-twitter-api"
+]
