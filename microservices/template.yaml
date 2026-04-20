@@ -1,0 +1,133 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Secure Twitter — 3 Spring Boot Lambda microservices (stream, post, user)
+  backed by PostgreSQL (RDS). JWT validation via Auth0 on protected endpoints.
+
+# ─── Parameters ───────────────────────────────────────────────────────────────
+Parameters:
+
+  DbUrl:
+    Type: String
+    Description: "Full JDBC URL — e.g. jdbc:postgresql://host:5432/securetwitter"
+
+  DbUsername:
+    Type: String
+    Default: postgres
+
+  DbPassword:
+    Type: String
+    NoEcho: true
+
+  Auth0IssuerUri:
+    Type: String
+    Description: "Auth0 issuer URI — e.g. https://my-tenant.us.auth0.com/"
+
+  Auth0Audience:
+    Type: String
+    Description: "Auth0 API audience — e.g. https://secure-twitter-api"
+
+# ─── Shared defaults ──────────────────────────────────────────────────────────
+Globals:
+  Function:
+    Runtime: java21
+    MemorySize: 512
+    Timeout: 60
+    Environment:
+      Variables:
+        DB_URL: !Ref DbUrl
+        DB_USERNAME: !Ref DbUsername
+        DB_PASSWORD: !Ref DbPassword
+        AUTH0_ISSUER_URI: !Ref Auth0IssuerUri
+        AUTH0_AUDIENCE: !Ref Auth0Audience
+
+# ─── Resources ────────────────────────────────────────────────────────────────
+Resources:
+
+  SecureTwitterApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Description: Secure Twitter REST API Gateway
+      Cors:
+        AllowMethods: "'GET,POST,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'"
+
+  # ── 1. Stream Service — GET /api/stream · GET /api/posts (public) ────────────
+  StreamFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: secure-twitter-stream
+      CodeUri: stream-service/
+      Handler: edu.eci.tdse.securetwitter.stream.LambdaHandler::handleRequest
+      Description: "Public feed — returns all posts in reverse chronological order"
+      Events:
+        GetStream:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SecureTwitterApi
+            Path: /api/stream
+            Method: GET
+        GetPosts:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SecureTwitterApi
+            Path: /api/posts
+            Method: GET
+    Metadata:
+      BuildMethod: maven
+
+  # ── 2. Post Service — POST /api/posts (requires JWT) ─────────────────────────
+  PostFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: secure-twitter-post
+      CodeUri: post-service/
+      Handler: edu.eci.tdse.securetwitter.post.LambdaHandler::handleRequest
+      Description: "Create post — requires valid Auth0 JWT Bearer token"
+      Events:
+        CreatePost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SecureTwitterApi
+            Path: /api/posts
+            Method: POST
+    Metadata:
+      BuildMethod: maven
+
+  # ── 3. User Service — GET /api/me (requires JWT) ──────────────────────────────
+  UserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: secure-twitter-user
+      CodeUri: user-service/
+      Handler: edu.eci.tdse.securetwitter.user.LambdaHandler::handleRequest
+      Description: "User profile — requires valid Auth0 JWT Bearer token"
+      Events:
+        GetMe:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SecureTwitterApi
+            Path: /api/me
+            Method: GET
+    Metadata:
+      BuildMethod: maven
+
+# ─── Outputs ──────────────────────────────────────────────────────────────────
+Outputs:
+
+  ApiUrl:
+    Description: >
+      API Gateway base URL — copy this value and set it as VITE_API_BASE_URL
+      in the frontend .env before building for production.
+    Value: !Sub 'https://${SecureTwitterApi}.execute-api.${AWS::Region}.amazonaws.com/prod'
+    Export:
+      Name: SecureTwitterApiUrl
+
+  StreamFunctionArn:
+    Value: !GetAtt StreamFunction.Arn
+  PostFunctionArn:
+    Value: !GetAtt PostFunction.Arn
+  UserFunctionArn:
+    Value: !GetAtt UserFunction.Arn
