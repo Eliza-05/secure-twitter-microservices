@@ -1,7 +1,7 @@
-package edu.eci.tdse.securetwitter.controller;
+package edu.eci.tdse.securetwitter.user.controller;
 
-import edu.eci.tdse.securetwitter.model.User;
-import edu.eci.tdse.securetwitter.service.UserService;
+import edu.eci.tdse.securetwitter.user.model.User;
+import edu.eci.tdse.securetwitter.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -19,7 +19,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
-@Tag(name = "User", description = "Authenticated user info")
+@Tag(name = "User", description = "Authenticated user profile")
 public class UserController {
 
     private final UserService userService;
@@ -30,15 +30,15 @@ public class UserController {
 
     @GetMapping("/me")
     @Operation(
-        summary = "Get current authenticated user",
-        description = "Returns the profile of the user identified by the JWT token. Creates the user in the database on first access.",
-        security = @SecurityRequirement(name = "bearerAuth")
+            summary = "Get current authenticated user",
+            description = "Returns the profile of the user identified by the JWT. Creates the user on first access.",
+            security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponse(responseCode = "200", description = "User profile returned",
-        content = @Content(mediaType = "application/json",
-            schema = @Schema(example = "{\"id\":\"auth0|abc\",\"dbId\":1,\"email\":\"user@example.com\",\"name\":\"John Doe\",\"picture\":\"https://...\"}")))
+            content = @Content(mediaType = "application/json",
+                    schema = @Schema(example = "{\"id\":\"auth0|abc\",\"dbId\":1,\"email\":\"user@example.com\",\"name\":\"John Doe\",\"picture\":\"https://...\"}")))
     @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token",
-        content = @Content(mediaType = "application/json"))
+            content = @Content(mediaType = "application/json"))
     public ResponseEntity<Map<String, Object>> getMe(JwtAuthenticationToken token) {
         User user = userService.getOrCreateFromToken(token);
 

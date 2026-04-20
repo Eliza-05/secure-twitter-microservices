@@ -6,14 +6,18 @@ export async function fetchStream() {
   return res.json()
 }
 
-export async function createPost(content, accessToken) {
+export async function createPost(content, accessToken, author = {}) {
   const res = await fetch(`${BASE_URL}/api/posts`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({
+      content,
+      authorName: author.name,
+      authorPicture: author.picture,
+    }),
   })
   if (!res.ok) throw new Error('Failed to create post')
   return res.json()

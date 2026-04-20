@@ -1,5 +1,6 @@
 package edu.eci.tdse.securetwitter.controller;
 
+import edu.eci.tdse.securetwitter.dto.PostResponse;
 import edu.eci.tdse.securetwitter.model.Post;
 import edu.eci.tdse.securetwitter.service.PostService;
 import org.junit.jupiter.api.Test;
@@ -12,7 +13,6 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -42,16 +42,16 @@ class PostControllerTest {
         saved.setAuthorPicture("https://cdn.example/avatar.png");
 
         when(postService.createPost(
-                eq("hello world"),
-                eq("google-oauth2|123"),
-                eq("Sebastian Example"),
-                eq("https://cdn.example/avatar.png")
+                "hello world",
+                "google-oauth2|123",
+                "Sebastian Example",
+                "https://cdn.example/avatar.png"
         )).thenReturn(saved);
 
-        ResponseEntity<Post> response = controller.createPost(request, token);
+        ResponseEntity<PostResponse> response = controller.createPost(request, token);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals("Sebastian Example", response.getBody().getAuthorName());
+        assertEquals("Sebastian Example", response.getBody().authorName());
         verify(postService).createPost(
                 "hello world",
                 "google-oauth2|123",
@@ -77,13 +77,13 @@ class PostControllerTest {
         saved.setAuthorName("google-oauth2|fallback");
 
         when(postService.createPost(
-                eq("hello world"),
-                eq("google-oauth2|fallback"),
-                eq("google-oauth2|fallback"),
-                eq(null)
+                "hello world",
+                "google-oauth2|fallback",
+                "google-oauth2|fallback",
+                null
         )).thenReturn(saved);
 
-        ResponseEntity<Post> response = controller.createPost(request, token);
+        ResponseEntity<PostResponse> response = controller.createPost(request, token);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         verify(postService).createPost(
@@ -94,4 +94,3 @@ class PostControllerTest {
         );
     }
 }
-

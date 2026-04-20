@@ -6,7 +6,7 @@ import { fetchStream, createPost } from '../services/api'
 import './FeedPage.css'
 
 export default function FeedPage() {
-  const { getAccessTokenSilently, isAuthenticated } = useAuth0()
+  const { getAccessTokenSilently, isAuthenticated, user } = useAuth0()
   const [posts, setPosts] = useState([])
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -57,7 +57,7 @@ export default function FeedPage() {
     try {
       setError(null)
       const token = await getAccessTokenSilently()
-      const newPost = await createPost(content, token)
+      const newPost = await createPost(content, token, user)
       setPosts((prev) => [newPost, ...prev])
     } catch {
       setError('Could not create post. Make sure you are logged in.')
