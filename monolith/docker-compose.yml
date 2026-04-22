@@ -7,4 +7,22 @@ services:
       POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/securetwitter
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      AUTH0_ISSUER_URI: https://elizabeth-platform.us.auth0.com/
+      AUTH0_AUDIENCE: https://secure-twitter-api
+    depends_on:
+      db:
+        condition: service_healthy

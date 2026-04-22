@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: edu.eci.tdse.securetwitter.controller.PostControllerIntegrationTest
 -------------------------------------------------------------------------------
-Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.729 s -- in edu.eci.tdse.securetwitter.controller.PostControllerIntegrationTest
+Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 11.55 s -- in edu.eci.tdse.securetwitter.controller.PostControllerIntegrationTest
